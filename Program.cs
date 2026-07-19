@@ -16,7 +16,9 @@ var isVercelDemo = builder.Environment.IsEnvironment("Docker");
 if (isVercelDemo && !string.IsNullOrEmpty(connectionString) &&
     connectionString.TrimStart().StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
 {
-    connectionString = "Data Source=/tmp/FinalProjectDemo.db";
+    // Change the version suffix whenever the demo schema changes so a stale
+    // ephemeral database from an older deployment is never reused.
+    connectionString = "Data Source=/tmp/FinalProjectDemo-v2.db";
 }
 
 builder.Services.AddDbContext<FinalProjectContext>(options =>
@@ -67,7 +69,16 @@ if (builder.Configuration["DEMO_KEY_GENERATION"] == "true")
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<FinalProjectContext>();
-    dbContext.Database.Migrate();
+    if (isVercelDemo)
+    {
+        // Create the complete current model in one step. This is more reliable
+        // than replaying historical migrations for an ephemeral demo database.
+        dbContext.Database.EnsureCreated();
+    }
+    else
+    {
+        dbContext.Database.Migrate();
+    }
 }
 
 // Configure the HTTP request pipeline.
