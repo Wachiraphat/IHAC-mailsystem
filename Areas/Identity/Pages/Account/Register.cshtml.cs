@@ -10,6 +10,8 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text.Json;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using FinalProject.Areas.Identity.Data;
@@ -33,6 +35,8 @@ namespace FinalProject.Areas.Identity.Pages.Account
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
         private readonly FinalProjectContext _dbContext;
+        private readonly IDataProtector _demoRegistrationProtector;
+        private readonly IWebHostEnvironment _environment;
 
         public RegisterModel(
             UserManager<FinalProjectUser> userManager,
@@ -40,7 +44,9 @@ namespace FinalProject.Areas.Identity.Pages.Account
             SignInManager<FinalProjectUser> signInManager,
             ILogger<RegisterModel> logger,
             IEmailSender emailSender,
-            FinalProjectContext dbContext)
+            FinalProjectContext dbContext,
+            IDataProtectionProvider dataProtectionProvider,
+            IWebHostEnvironment environment)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -49,6 +55,8 @@ namespace FinalProject.Areas.Identity.Pages.Account
             _logger = logger;
             _emailSender = emailSender;
             _dbContext = dbContext;
+            _demoRegistrationProtector = dataProtectionProvider.CreateProtector("IHAC demo registration ticket v1");
+            _environment = environment;
         }
 
         [BindProperty]
@@ -109,6 +117,8 @@ namespace FinalProject.Areas.Identity.Pages.Account
                 {
                     _logger.LogInformation("User created a new account with password.");
 
+                    SaveDemoRegistrationTicket(user);
+
                     // Set success message to TempData
                     TempData["SuccessMessage"] = "Your account has been created successfully! Please confirm your email.";
 
@@ -147,6 +157,34 @@ namespace FinalProject.Areas.Identity.Pages.Account
             }
 
             return Page();
+        }
+
+        private void SaveDemoRegistrationTicket(FinalProjectUser user)
+        {
+            if (!_environment.IsEnvironment("Docker"))
+            {
+                return;
+            }
+
+            var ticket = new DemoRegistrationTicket
+            {
+                UserName = user.UserName,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                MobilePhone = user.MobilePhone,
+                PasswordHash = user.PasswordHash,
+                SecurityStamp = user.SecurityStamp
+            };
+
+            var protectedTicket = _demoRegistrationProtector.Protect(JsonSerializer.Serialize(ticket));
+            Response.Cookies.Append("IHAC.DemoRegistration", protectedTicket, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                IsEssential = true,
+                MaxAge = TimeSpan.FromDays(1)
+            });
         }
 
 

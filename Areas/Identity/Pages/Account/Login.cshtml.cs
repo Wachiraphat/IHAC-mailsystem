@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.Json;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authorization;
 using FinalProject.Areas.Identity.Data;
 using Microsoft.AspNetCore.Authentication;
@@ -22,11 +24,22 @@ namespace FinalProject.Areas.Identity.Pages.Account
     {
         private readonly SignInManager<FinalProjectUser> _signInManager;
         private readonly ILogger<LoginModel> _logger;
+        private readonly UserManager<FinalProjectUser> _userManager;
+        private readonly IDataProtector _demoRegistrationProtector;
+        private readonly IWebHostEnvironment _environment;
 
-        public LoginModel(SignInManager<FinalProjectUser> signInManager, ILogger<LoginModel> logger)
+        public LoginModel(
+            SignInManager<FinalProjectUser> signInManager,
+            UserManager<FinalProjectUser> userManager,
+            ILogger<LoginModel> logger,
+            IDataProtectionProvider dataProtectionProvider,
+            IWebHostEnvironment environment)
         {
             _signInManager = signInManager;
+            _userManager = userManager;
             _logger = logger;
+            _demoRegistrationProtector = dataProtectionProvider.CreateProtector("IHAC demo registration ticket v1");
+            _environment = environment;
         }
 
         /// <summary>
@@ -98,6 +111,8 @@ namespace FinalProject.Areas.Identity.Pages.Account
 
             if (ModelState.IsValid)
             {
+                await RestoreDemoAccountIfNeededAsync();
+
                 // This doesn't count login failures towards account lockout
                 // To enable password failures to trigger account lockout, set lockoutOnFailure: true
                 var result = await _signInManager.PasswordSignInAsync(Input.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
@@ -124,6 +139,51 @@ namespace FinalProject.Areas.Identity.Pages.Account
 
             // If we got this far, something failed, redisplay form
             return Page();
+        }
+
+        private async Task RestoreDemoAccountIfNeededAsync()
+        {
+            if (!_environment.IsEnvironment("Docker") ||
+                await _userManager.FindByNameAsync(Input.UserName) != null ||
+                !Request.Cookies.TryGetValue("IHAC.DemoRegistration", out var protectedTicket))
+            {
+                return;
+            }
+
+            try
+            {
+                var json = _demoRegistrationProtector.Unprotect(protectedTicket);
+                var ticket = JsonSerializer.Deserialize<DemoRegistrationTicket>(json);
+
+                if (ticket == null ||
+                    !string.Equals(ticket.UserName, Input.UserName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+
+                var user = new FinalProjectUser
+                {
+                    UserName = ticket.UserName,
+                    Email = ticket.UserName,
+                    FirstName = ticket.FirstName,
+                    LastName = ticket.LastName,
+                    MobilePhone = ticket.MobilePhone,
+                    PasswordHash = ticket.PasswordHash,
+                    SecurityStamp = ticket.SecurityStamp ?? Guid.NewGuid().ToString()
+                };
+
+                var createResult = await _userManager.CreateAsync(user);
+                if (!createResult.Succeeded)
+                {
+                    _logger.LogWarning("Could not restore demo user {UserName}: {Errors}",
+                        Input.UserName,
+                        string.Join("; ", createResult.Errors.Select(e => e.Description)));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not read the demo registration ticket for {UserName}.", Input.UserName);
+            }
         }
     }
 }
