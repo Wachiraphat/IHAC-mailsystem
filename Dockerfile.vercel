@@ -1,6 +1,5 @@
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
 WORKDIR /app
-ENV ASPNETCORE_URLS=http://+:80
 ENV ASPNETCORE_ENVIRONMENT=Docker
 EXPOSE 80
 
@@ -14,4 +13,6 @@ RUN dotnet publish "FinalProject.csproj" -c Release -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "FinalProject.dll"]
+# Vercel injects PORT for container deployments. Keep port 80 as the
+# documented local/default value when PORT is not set.
+CMD ["sh", "-c", "exec dotnet FinalProject.dll --urls http://0.0.0.0:${PORT:-80}"]
