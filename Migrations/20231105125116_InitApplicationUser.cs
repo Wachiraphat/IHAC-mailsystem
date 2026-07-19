@@ -1,10 +1,14 @@
 ﻿using System;
+using FinalProject.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace FinalProject.Migrations
 {
+    [DbContext(typeof(FinalProjectContext))]
+    [Migration("20231105125116_InitApplicationUser")]
     public partial class InitApplicationUser : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
