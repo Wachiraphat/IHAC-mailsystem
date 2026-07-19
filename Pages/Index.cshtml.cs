@@ -1,5 +1,6 @@
 ﻿using FinalProject.Areas.Identity.Data;
 using FinalProject.Data;
+using FinalProject.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,8 @@ namespace FinalProject.Pages
 
             try
             {
+                await EnsureWelcomeEmailAsync(username);
+
                 ListEmails = await _dbContext.Emails
                     .Where(e => e.EmailReceiver == username)
                     .OrderByDescending(e => e.DateSent)
@@ -55,6 +58,34 @@ namespace FinalProject.Pages
                 _logger.LogError(ex, "Database error while fetching emails for user {Username}.", username);
                 TempData["ErrorMessage"] = "There was an issue retrieving your emails. Please try again later.";
             }
+        }
+
+        private async Task EnsureWelcomeEmailAsync(string username)
+        {
+            const string welcomeSender = "IHAC Email System";
+            const string welcomeSubject = "Welcome to IHAC Email!";
+
+            var welcomeEmailExists = await _dbContext.Emails.AnyAsync(e =>
+                e.EmailReceiver == username &&
+                e.EmailSender == welcomeSender &&
+                e.Subject == welcomeSubject);
+
+            if (welcomeEmailExists)
+            {
+                return;
+            }
+
+            _dbContext.Emails.Add(new Email
+            {
+                EmailReceiver = username,
+                EmailSender = welcomeSender,
+                Subject = welcomeSubject,
+                Body = "ยินดีต้อนรับสู่ IHAC Email!\n\nโปรดเริ่มต้นด้วยการยืนยันอีเมลของคุณ จากนั้นคุณสามารถอ่านเมลใหม่ ส่งเมล หรือจัดการบัญชีได้จากหน้าเมนูหลัก.\n\n- คลิก 'Inbox' เพื่อดูเมลของคุณ\n- คลิก 'Compose Email' เพื่อส่งเมล\n- คลิก 'Setting' หรือ 'View Profile' เพื่อแก้ไขข้อมูลส่วนตัว\n\nหากต้องการความช่วยเหลือเพิ่มเติม ให้ติดต่อผู้ดูแลระบบหรือดูคำแนะนำในหน้าเว็บไซต์.",
+                DateSent = DateTime.UtcNow,
+                ReadStatus = false
+            });
+
+            await _dbContext.SaveChangesAsync();
         }
 
         // Delete Email (POST)
