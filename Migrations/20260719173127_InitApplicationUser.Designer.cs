@@ -12,7 +12,7 @@ namespace FinalProject.Migrations
 {
     [DbContext(typeof(FinalProjectContext))]
     [Migration("20260719173127_InitApplicationUser")]
-    partial class InitApplicationUser
+    partial class AddEmails
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
