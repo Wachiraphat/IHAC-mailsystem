@@ -9,6 +9,11 @@ COPY ["FinalProject.csproj", "./"]
 RUN dotnet restore "FinalProject.csproj"
 COPY . .
 RUN dotnet publish "FinalProject.csproj" -c Release -o /app/publish
+# Generate one shared Data Protection key ring at image-build time. It allows
+# antiforgery and authentication cookies to work across Vercel instances.
+RUN mkdir -p /app/publish/demo-keys && \
+    DEMO_KEY_GENERATION=true DEMO_KEY_PATH=/app/publish/demo-keys \
+    dotnet /app/publish/FinalProject.dll
 
 FROM base AS final
 WORKDIR /app
