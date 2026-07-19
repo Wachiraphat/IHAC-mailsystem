@@ -13,6 +13,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using FinalProject.Areas.Identity.Data;
+using FinalProject.Data;
+using FinalProject.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -30,13 +32,15 @@ namespace FinalProject.Areas.Identity.Pages.Account
         private readonly IUserEmailStore<FinalProjectUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
+        private readonly FinalProjectContext _dbContext;
 
         public RegisterModel(
             UserManager<FinalProjectUser> userManager,
             IUserStore<FinalProjectUser> userStore,
             SignInManager<FinalProjectUser> signInManager,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            FinalProjectContext dbContext)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -44,6 +48,7 @@ namespace FinalProject.Areas.Identity.Pages.Account
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
+            _dbContext = dbContext;
         }
 
         [BindProperty]
@@ -77,17 +82,11 @@ namespace FinalProject.Areas.Identity.Pages.Account
             public string Password { get; set; }
         }
 
-
-        public async Task OnGetAsync(string returnUrl = null)
-        {
-            ReturnUrl = returnUrl;
-            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-        }
-
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
             returnUrl ??= Url.Content("~/");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
             if (ModelState.IsValid)
             {
                 var user = CreateUser();
@@ -96,6 +95,12 @@ namespace FinalProject.Areas.Identity.Pages.Account
                 user.LastName = Input.LastName;
                 user.MobilePhone = Input.MobilePhone;
 
+                if (!Input.UserName.EndsWith("@gmail.com", StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError("Input.UserName", "The username must end with '@gmail.com'.");
+                    return Page();
+                }
+
                 await _userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.UserName, CancellationToken.None);
                 var result = await _userManager.CreateAsync(user, Input.Password);
@@ -103,6 +108,9 @@ namespace FinalProject.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
+
+                    // Set success message to TempData
+                    TempData["SuccessMessage"] = "Your account has been created successfully! Please confirm your email.";
 
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -116,25 +124,32 @@ namespace FinalProject.Areas.Identity.Pages.Account
                     await _emailSender.SendEmailAsync(Input.UserName, "Confirm your email",
                         $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
-                    if (_userManager.Options.SignIn.RequireConfirmedAccount)
+                    var welcomeEmail = new Email
                     {
-                        return RedirectToPage("RegisterConfirmation", new { email = Input.UserName, returnUrl = returnUrl });
-                    }
-                    else
-                    {
-                        await _signInManager.SignInAsync(user, isPersistent: false);
-                        return LocalRedirect(returnUrl);
-                    }
+                        EmailReceiver = Input.UserName,
+                        EmailSender = "IHAC Email System",
+                        Subject = "Welcome to IHAC Email!",
+                        Body = "ยินดีต้อนรับสู่ IHAC Email!\n\nโปรดเริ่มต้นด้วยการยืนยันอีเมลของคุณ จากนั้นคุณสามารถอ่านเมลใหม่ ส่งเมล หรือจัดการบัญชีได้จากหน้าเมนูหลัก.\n\n- คลิก 'Inbox' เพื่อดูเมลของคุณ\n- คลิก 'Compose Email' เพื่อส่งเมล\n- คลิก 'Setting' หรือ 'View Profile' เพื่อแก้ไขข้อมูลส่วนตัว\n\nหากต้องการความช่วยเหลือเพิ่มเติม ให้ติดต่อผู้ดูแลระบบหรือดูคำแนะนำในหน้าเว็บไซต์.",
+                        DateSent = DateTime.UtcNow,
+                        ReadStatus = false
+                    };
+
+                    _dbContext.Emails.Add(welcomeEmail);
+                    await _dbContext.SaveChangesAsync();
+
+                    return RedirectToPage("/Account/Login");
                 }
+
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
             }
 
-            // If we got this far, something failed, redisplay form
             return Page();
         }
+
+
 
         private FinalProjectUser CreateUser()
         {
@@ -145,8 +160,7 @@ namespace FinalProject.Areas.Identity.Pages.Account
             catch
             {
                 throw new InvalidOperationException($"Can't create an instance of '{nameof(FinalProjectUser)}'. " +
-                    $"Ensure that '{nameof(FinalProjectUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
-                    $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
+                    $"Ensure that '{nameof(FinalProjectUser)}' is not an abstract class and has a parameterless constructor.");
             }
         }
 

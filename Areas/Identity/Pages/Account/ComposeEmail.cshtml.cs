@@ -1,12 +1,13 @@
-using FinalProject.Data;  // Your DbContext
+﻿using FinalProject.Data;  // Your DbContext
 using FinalProject.Models;  // The Email model
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
-using Microsoft.Data.SqlClient;  // Correct namespace for SqlParameter
+using Microsoft.AspNetCore.Identity;  // Required for UserManager
 using System;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+using FinalProject.Areas.Identity.Data;
 
 namespace FinalProject.Areas.Identity.Pages.Account
 {
@@ -14,6 +15,7 @@ namespace FinalProject.Areas.Identity.Pages.Account
     {
         private readonly FinalProjectContext _context;
         private readonly ILogger<ComposeEmailModel> _logger;
+        private readonly UserManager<FinalProjectUser> _userManager;  // Add UserManager
 
         [BindProperty]
         public string To { get; set; }
@@ -24,10 +26,11 @@ namespace FinalProject.Areas.Identity.Pages.Account
         [BindProperty]
         public string Body { get; set; }
 
-        public ComposeEmailModel(FinalProjectContext context, ILogger<ComposeEmailModel> logger)
+        public ComposeEmailModel(FinalProjectContext context, ILogger<ComposeEmailModel> logger, UserManager<FinalProjectUser> userManager)
         {
             _context = context;
             _logger = logger;
+            _userManager = userManager;  // Inject UserManager
         }
 
         // OnGet: You can use this to set up anything on page load
@@ -39,51 +42,74 @@ namespace FinalProject.Areas.Identity.Pages.Account
         // OnPostAsync: This method handles form submission
         public async Task<IActionResult> OnPostAsync()
         {
+            // Validate required fields
+            if (string.IsNullOrEmpty(To))
+            {
+                ModelState.AddModelError("To", "Recipient email is required.");
+            }
+
+            if (string.IsNullOrEmpty(Subject))
+            {
+                ModelState.AddModelError("Subject", "Subject is required.");
+            }
+
+            if (string.IsNullOrEmpty(Body))
+            {
+                ModelState.AddModelError("Body", "Body cannot be empty.");
+            }
+
+            // If model state is invalid, return with errors
             if (!ModelState.IsValid)
             {
                 return Page(); // If validation fails, return the page with errors
             }
 
+            // Validate email address format
+            if (!Regex.IsMatch(To, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"))
+            {
+                ModelState.AddModelError("To", "Please enter a valid email address.");
+                return Page();
+            }
+
+            // Check if recipient exists in the system (AspNetUsers)
+            var user = await _userManager.FindByEmailAsync(To);
+            if (user == null)
+            {
+                ModelState.AddModelError("To", "No user found with this email address.");
+                return Page(); // Return with error message
+            }
+
             try
             {
-                // SQL query to insert email
-                string insertEmailQuery = @"
-                    INSERT INTO Emails (emailreceiver, Subject, Body, DateSent, EmailSender, ReadStatus) 
-                    VALUES (@To, @Subject, @Body, @DateSent, @EmailSender, @ReadStatus)";  // Fixed column list
-
-                // Define parameters to prevent SQL injection
-                var parameters = new[]
+                // Create an Email object to store in the database
+                var email = new Email
                 {
-                    new SqlParameter("@To", To),
-                    new SqlParameter("@Subject", Subject),
-                    new SqlParameter("@Body", Body),
-                    new SqlParameter("@DateSent", DateTime.UtcNow),
-                    new SqlParameter("@EmailSender", User.Identity.Name),
-                    new SqlParameter("@ReadStatus", "0")  // Mark as unread
+                    EmailReceiver = To,
+                    Subject = Subject,
+                    Body = Body,
+                    DateSent = DateTime.UtcNow,
+                    EmailSender = User.Identity.Name,  // Ensure the sender is captured
+                    ReadStatus = false // Default to unread
                 };
 
-                // Create SQL connection
-                using (SqlConnection connection = new SqlConnection(_context.Database.GetDbConnection().ConnectionString))
-                {
-                    await connection.OpenAsync();
+                // Add the email to the DbContext
+                _context.Emails.Add(email);
+                await _context.SaveChangesAsync();
 
-                    using (SqlCommand command = new SqlCommand(insertEmailQuery, connection))
-                    {
-                        command.Parameters.AddRange(parameters);
-                        await command.ExecuteNonQueryAsync();
-                    }
-                }
+                // Log the success
+                _logger.LogInformation("Email sent to {EmailReceiver} from {EmailSender} with subject: {Subject}",
+                                       To, User.Identity.Name, Subject);
 
-                // Step 3: Set TempData message and redirect
-                TempData["Message"] = "Email sent successfully!";
-                return RedirectToPage("/Index"); // Redirect to the email list page
+                // Show success message in TempData
+                TempData["SuccessMessage"] = "Email sent successfully!";
+                return RedirectToPage("/Index"); // Redirect to the index page
             }
             catch (Exception ex)
             {
-                // Log any errors that occur during the process
+                // Log the error
                 _logger.LogError(ex, "An error occurred while sending the email.");
                 TempData["ErrorMessage"] = "An error occurred while sending the email.";
-                return RedirectToPage("/Error");
+                return RedirectToPage("/Error"); // Redirect to the error page
             }
         }
     }

@@ -1,41 +1,140 @@
 ﻿@page
-@model LoginModel
+@model FinalProject.Areas.Identity.Pages.Account.LoginModel
 
-@{
-    ViewData["Title"] = "Log in";
-}
+<div class="container d-flex justify-content-center align-items-center min-vh-100">
+    <div class="card p-4 w-100" style="max-width: 500px;">
+        <h2 class="text-center mb-4" style="color: #0099CC;">Login</h2>
 
-<h3>@ViewData["Title"]</h3>
+        <form method="post">
+            <!-- แสดงข้อผิดพลาดของการตรวจสอบ Model -->
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
 
-<form id="account" method="post">
-    <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-    <table>
-        <tr>
-            <td>Username</td>
-            <td>
+            <div class="form-group mb-3">
                 <div class="form-floating">
-                    <input asp-for="Input.UserName" class="form" autocomplete="username" aria-required="true" />
+                    <!-- ฟิลด์ Username -->
+                    <input asp-for="Input.UserName" class="form-control" placeholder="Username" autocomplete="username" aria-required="true" />
+                    <label asp-for="Input.UserName">Email</label>
                     <span asp-validation-for="Input.UserName" class="text-danger"></span>
                 </div>
-            </td>
-        </tr>
-        <tr>
-            <td>Password</td>
-            <td>
+            </div>
+
+            <div class="form-group mb-3">
                 <div class="form-floating">
-                    <input asp-for="Input.Password" class="form" autocomplete="current-password" aria-required="true" />
+                    <!-- ฟิลด์ Password -->
+                    <input asp-for="Input.Password" class="form-control" type="password" placeholder="Password" autocomplete="current-password" aria-required="true" />
+                    <label asp-for="Input.Password">Password</label>
                     <span asp-validation-for="Input.Password" class="text-danger"></span>
                 </div>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                <button id="login-submit" type="submit" class="btn btn-primary">Log in</button>
-            </td>
-        </tr>
-    </table>
-</form>
+                <!-- Forgot Password Link -->
+                <div class="mt-3 text-end">
+                    <a href="/Identity/Account/ForgotPassword" class="text-muted">Forgot password?</a>
+                </div>
+            </div>
+
+            <div style="color: #0b63c1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 17vh;">
+                <!-- ปุ่ม Go Back และ Login -->
+                <div class="text-center">
+                    <button id="go-back" type="button" class="btn btn-outline-primary btn-lg me-2" onclick="window.history.back();">Go Back</button>
+                    <button id="login-submit" type="submit" class="btn btn-primary btn-lg">Login</button>
+                </div>
+                <!-- Footer Links -->
+                <p class="mt-3">
+                    <span class="text-muted">No account?</span>
+                    <a href="/Identity/Account/Register" class="text-purple font-weight-bold">Create one!</a>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <script>
+            window.onload = function () {
+                alert('@TempData["SuccessMessage"]');
+            }
+        </script>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <script>
+            window.onload = function () {
+                alert('@TempData["ErrorMessage"]');
+            }
+        </script>
+    }
 }
+
+<style>
+    .login-container {
+        max-width: 400px;
+        margin: 0 auto;
+        padding-top: 50px;
+        font-family: Arial, sans-serif;
+    }
+
+    .login-title {
+        text-align: center;
+        font-weight: bold;
+        color: #0099CC;
+        margin-bottom: 20px;
+        font-size: 2em;
+    }
+
+    .login-form {
+        background-color: #ffffff;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-floating > label {
+        padding: 0.75rem 0;
+        color: #555;
+    }
+
+    .form-control {
+        border-radius: 0.25rem;
+        border: 1px solid #ced4da;
+        color: black; /* Change text color in input fields to black */
+    }
+
+        .form-control:focus {
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+    /* Updated Button Colors */
+    .btn-outline-primary, .btn-primary {
+        background-color: #0099CC; /* Background color for Register button */
+        color: white; /* Text color */
+        border: none; /* Remove default border */
+        padding: 10px 20px; /* Padding for better spacing */
+        border-radius: 5px;
+    }
+
+        .btn-outline-primary:hover, .btn-primary:hover {
+            background-color: #007ba7; /* Darker shade on hover */
+            color: white;
+        }
+
+    .btn-primary {
+        padding: 12px 20px;
+    }
+
+    .btn-outline-primary {
+        border: 2px solid #0099CC; /* Border color for Go Back button */
+        color: #0099CC; /* Text color for outline button */
+        background-color: transparent; /* Transparent background */
+        padding: 10px 20px;
+        border-radius: 5px;
+    }
+
+        .btn-outline-primary:hover {
+            background-color: #0099CC;
+            color: white; /* Set the font color to white on hover */
+        }
+
+</style>

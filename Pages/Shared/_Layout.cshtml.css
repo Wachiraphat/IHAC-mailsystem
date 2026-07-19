@@ -1,48 +1,118 @@
-﻿/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
-for details on configuring this project to bundle and minify static web assets. */
-
+﻿/* Base styles */
 a.navbar-brand {
-  white-space: normal;
-  text-align: center;
-  word-break: break-all;
+    white-space: normal;
+    text-align: center;
+    word-break: break-all;
+    font-size: 2rem; /* ปรับขนาดให้ใหญ่พอเหมาะ */
 }
 
 a {
-  color: #0077cc;
+    color: #0077cc;
+    text-decoration: none;
 }
 
 .btn-primary {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+    color: black;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
+    font-size: 1rem; /* ปรับให้เหมาะสมกับขนาดหน้าจอ */
+    padding: 0.5rem 1rem; /* ปรับ padding ให้สอดคล้อง */
 }
 
 .nav-pills .nav-link.active, .nav-pills .show > .nav-link {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+    color: black;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
 }
 
 .border-top {
-  border-top: 1px solid #e5e5e5;
+    border-top: 1px solid #e5e5e5;
 }
+
 .border-bottom {
-  border-bottom: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
 }
 
 .box-shadow {
-  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
 }
 
 button.accept-policy {
-  font-size: 1rem;
-  line-height: inherit;
+    font-size: 1rem;
+    line-height: inherit;
 }
 
 .footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  white-space: nowrap;
-  line-height: 60px;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    white-space: nowrap;
+    line-height: 60px;
+    font-size: 0.875rem; /* ขนาดตัวอักษรสำหรับฟุตเตอร์ */
+}
+
+/* Responsive Styles for different screen sizes */
+@media (max-width: 1200px) {
+    /* Large desktops and tablets */
+    .navbar-brand {
+        font-size: 1.75rem;
+    }
+
+    .btn-primary {
+        font-size: 1.125rem;
+    }
+
+    .footer {
+        line-height: 50px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 992px) {
+    /* Medium devices (tablets) */
+    .navbar-brand {
+        font-size: 1.5rem;
+    }
+
+    .btn-primary {
+        font-size: 1rem;
+    }
+
+    .footer {
+        line-height: 45px;
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Small devices (tablets and mobile) */
+    .navbar-brand {
+        font-size: 1.25rem;
+    }
+
+    .btn-primary {
+        font-size: 0.875rem;
+    }
+
+    .footer {
+        line-height: 40px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Extra small devices (phones) */
+    .navbar-brand {
+        font-size: 1rem;
+    }
+
+    .btn-primary {
+        font-size: 0.875rem;
+        padding: 0.4rem 0.8rem; /* ปรับ padding บนโทรศัพท์ */
+    }
+
+    .footer {
+        line-height: 35px;
+        font-size: 1rem;
+    }
 }

@@ -28,7 +28,7 @@ namespace FinalProject.Data
             builder.Entity<Email>(entity =>
             {
                 entity.HasKey(e => e.Id);  // Primary key configuration
-                entity.Property(e => e.To).HasMaxLength(255).IsRequired();
+                entity.Property(e => e.EmailReceiver).HasMaxLength(255).IsRequired();
                 entity.Property(e => e.Subject).HasMaxLength(255).IsRequired();
                 entity.Property(e => e.Body).HasMaxLength(2000);  // Max body length, adjust as needed
                 entity.Property(e => e.DateSent).IsRequired();  // DateSent cannot be null

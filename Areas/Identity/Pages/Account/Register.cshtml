@@ -4,66 +4,137 @@
     ViewData["Title"] = "Register";
 }
 
-<h3>@ViewData["Title"]</h3>
+<div class="register-container">
+    <h3 class="register-title">@ViewData["Title"]</h3>
 
-<form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-    <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+    <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="register-form">
+        <!-- แสดงข้อผิดพลาดทั้งหมด -->
+        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
 
-    <table>
-        <tr>
-            <td>FirstName</td>
-            <td>
-                <div class="form-floating">
-                    <input asp-for="Input.FirstName" class="form" autocomplete="firstname" aria-required="true" />
-                    <span asp-validation-for="Input.FirstName" class="text-danger"></span>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td>LastName</td>
-            <td>
-                <div class="form-floating">
-                    <input asp-for="Input.LastName" class="form" autocomplete="lastname" aria-required="true" />
-                    <span asp-validation-for="Input.LastName" class="text-danger"></span>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td>Mobile Phone</td>
-            <td>
-                <div class="form-floating">
-                    <input asp-for="Input.MobilePhone" class="form" autocomplete="mobilephone" aria-required="true" />
-                    <span asp-validation-for="Input.MobilePhone" class="text-danger"></span>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td>Username</td>
-            <td>
-                <div class="form-floating">
-                    <input asp-for="Input.UserName" class="form" autocomplete="username" aria-required="true" />
-                    <span asp-validation-for="Input.UserName" class="text-danger"></span>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td>Password</td>
-            <td>
-                <div class="form-floating">
-                    <input asp-for="Input.Password" class="form" autocomplete="new-password" aria-required="true" />
-                    <span asp-validation-for="Input.Password" class="text-danger"></span>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                <button id="registerSubmit" type="submit" class="btn btn-primary">Register</button>
-            </td>
-        </tr>
-    </table>
+        <!-- First Name -->
+        <div class="form-group">
+            <div class="form-floating">
+                <input asp-for="Input.FirstName" class="form-control" placeholder="First Name" autocomplete="firstname" aria-required="true" />
+                <label asp-for="Input.FirstName">First Name</label>
+                <span asp-validation-for="Input.FirstName" class="text-danger"></span>
+            </div>
+        </div>
 
-</form>
+        <!-- Last Name -->
+        <div class="form-group">
+            <div class="form-floating">
+                <input asp-for="Input.LastName" class="form-control" placeholder="Last Name" autocomplete="lastname" aria-required="true" />
+                <label asp-for="Input.LastName">Last Name</label>
+                <span asp-validation-for="Input.LastName" class="text-danger"></span>
+            </div>
+        </div>
+
+        <!-- Mobile Phone -->
+        <div class="form-group">
+            <div class="form-floating">
+                <input asp-for="Input.MobilePhone" class="form-control" placeholder="Mobile Phone" autocomplete="mobilephone" aria-required="true" />
+                <label asp-for="Input.MobilePhone">Mobile Phone</label>
+                <span asp-validation-for="Input.MobilePhone" class="text-danger"></span>
+            </div>
+        </div>
+
+        <!-- Username -->
+        <div class="form-group">
+            <div class="form-floating">
+                <input asp-for="Input.UserName" class="form-control" placeholder="Email" autocomplete="username" aria-required="true" />
+                <label asp-for="Input.UserName">Email</label>
+                <span asp-validation-for="Input.UserName" class="text-danger"></span>
+            </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+            <div class="form-floating">
+                <input asp-for="Input.Password" class="form-control" type="password" placeholder="Password" autocomplete="new-password" aria-required="true" />
+                <label asp-for="Input.Password">Password</label>
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button id="go-back" type="button" class="btn btn-outline-custom btn-lg me-2" onclick="confirmGoBack()">Go Back</button>
+            <button id="registerSubmit" type="submit" class="btn btn-custom btn-lg w-50">Register</button>
+        </div>
+    </form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        function confirmGoBack() {
+            if (confirm("Are you sure you want to go back? All changes will be lost.")) {
+                window.history.back();
+            }
+        }
+    </script>
 }
+
+<style>
+    .register-container {
+        max-width: 400px;
+        margin: 0 auto;
+        padding-top: 50px;
+        font-family: Arial, sans-serif;
+    }
+
+    .register-title {
+        text-align: center;
+        font-weight: bold;
+        color: #0099CC;
+        margin-bottom: 20px;
+        font-size: 1.8em;
+    }
+
+    .register-form {
+        background-color: #ffffff;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-floating > label {
+        padding: 0.75rem 0;
+        color: #555;
+    }
+
+    .form-control {
+        border-radius: 0.25rem;
+        border: 1px solid #ced4da;
+    }
+
+    .btn-custom {
+        background-color: #0099CC; /* Background color for Register button */
+        color: white; /* Text color */
+        border: none; /* Remove default border */
+        padding: 10px 20px; /* Padding for better spacing */
+        border-radius: 5px; /* Rounded corners */
+    }
+
+        .btn-custom:hover {
+            background-color: #007ba7; /* Darker shade on hover */
+            color: white; /* Keep text color white */
+        }
+
+    .btn-outline-custom {
+        border: 2px solid #0099CC; /* Border color for Go Back button */
+        color: #0099CC; /* Text color for outline button */
+        background-color: transparent; /* Transparent background */
+        padding: 10px 20px;
+        border-radius: 5px;
+    }
+
+        .btn-outline-custom:hover {
+            background-color: #0099CC; /* Background color on hover */
+            color: white; /* Change text color to white on hover */
+        }
+</style>

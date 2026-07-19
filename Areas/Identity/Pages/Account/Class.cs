@@ -4,10 +4,13 @@ namespace FinalProject.Models
 {
     public class Email
     {
-        public int Id { get; set; }  // Primary key
-        public string To { get; set; }  // Recipient email
-        public string Subject { get; set; }  // Subject of the email
-        public string Body { get; set; }  // Body content of the email
-        public DateTime DateSent { get; set; }  // Date when the email was "sent"
+        public int Id { get; set; }
+        public string EmailReceiver { get; set; }
+        public string Subject { get; set; }
+        public string Body { get; set; }
+        public DateTime DateSent { get; set; }
+        public string EmailSender { get; set; }
+        public bool ReadStatus { get; set; }
     }
+
 }

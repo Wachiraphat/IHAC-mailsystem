@@ -1,73 +1,244 @@
 ﻿@page
 @model IndexModel
+
 @{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Inbox";
 }
 
-<!-- Center the logo using CSS instead of <center> -->
-<div style="text-align: center;">
-    <img src="images/logo.jpg" width="400" />
-</div>
+<div class="container mt-5">
 
-<!-- Display emails in a table -->
-@if (Model.ListEmails != null && Model.ListEmails.Count > 0)
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>From</th>
-                <th>Subject</th>
-                <th>Date/Time</th>
-                <th>Delete</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.ListEmails)
-            {
+    <!-- Display emails in a styled table -->
+    @if (Model.ListEmails != null && Model.ListEmails.Count > 0)
+    {
+        <table class="table table-hover">
+            <thead class="table-dark">
                 <tr>
-                    <td>@item.EmailSender</td>
-                    <td>
-                        <!-- Display a yellow dot for unread emails -->
-                        @if (item.EmailIsRead == "0")
-                        {
-                            <img src="images/yellow.gif" height="10" />
-                        }
-                        <a href="ReadEmail?emailid=@item.EmailID">@item.EmailSubject</a>
-                    </td>
-                    <td>@item.EmailDate</td>
-                    <td>
-                        <a class="btn btn-info btn-sm" href="/Identity/Account/ViewEmail?emailid=@item.EmailID">View</a>
-                        <!-- Delete button for each email -->
-                        <form method="post" asp-page-handler="DeleteEmail" onsubmit="return confirmDelete()">
-                            <input type="hidden" name="emailid" value="@item.EmailID" />
-                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                        </form>
-                    </td>
+                    <th style="width: 5%">Status</th>
+                    <th style="width: 15%">From</th>
+                    <th style="width: 20%">Subject</th>
+                    <th style="width: 10%">Date/Time</th>
+                    <th style="width: 5%"></th> <!-- Empty header for Actions column -->
                 </tr>
-            }
-        </tbody>
-    </table>
-}
-else
-{
-    <p>No emails found.</p>
-}
+            </thead>
+            <tbody>
+                @foreach (var Emails in Model.ListEmails)
+                {
+                    <tr class="@((Emails.EmailIsRead == "1") ? "read" : "unread")"
+                        onclick="window.location.href='/Identity/Account/ViewEmail?emailid=@Emails.EmailID'">
+                        <!-- Status: Display "read" or "unread" with corresponding icon -->
+                        <td>
+                            @if (Emails.EmailIsRead == "1")
+                            {
+                                <img src="/images/read.png" alt="Unread" width="20" />
+                            }
+                            else
+                            {
+                                <img src="/images/unread.png" alt="Read" width="20" />
+                            }
+                        </td>
 
-<!-- Link to compose a new email (ensure user is authenticated) -->
-@if (User.Identity?.Name != null)
-{
-    <a class="btn btn-primary btn-sm" href="/Identity/Account/ComposeEmail?Sender=@User.Identity.Name">Compose New Email</a>
-}
-else
-{
-    <p>You need to <a href="/Identity/Account/Login">log in</a> to compose a new email.</p>
-}
+                        <!-- From -->
+                        <td>
+                            @if (Emails.EmailSender.Length > 30)
+                            {
+                                @Emails.EmailSender.Substring(0, 30)
+                            }
+                            else
+                            {
+                                @Emails.EmailSender
+                            }
+                        </td>
+
+                        <!-- Subject -->
+                        <td>
+                            @if (Emails.EmailSubject.Length > 30)
+                            {
+                                @Emails.EmailSubject.Substring(0, 30)
+                            }
+                            else
+                            {
+                                @Emails.EmailSubject
+                            }
+                        </td>
+
+                        <!-- Date/Time -->
+                        <td>@Emails.EmailDate</td>
+
+                        <!-- Actions: Delete only -->
+                        <td>
+                            <form method="post" asp-page-handler="DeleteEmail" onsubmit="return confirmDelete()">
+                                <input type="hidden" name="emailid" value="@Emails.EmailID" />
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    <!-- Compose Email Button -->
+    @if (User.Identity?.Name != null)
+    {
+        <div class="text-center mt-4">
+            <a class="btn btn-compose-email btn-lg" href="/Identity/Account/ComposeEmail?Sender=@User.Identity.Name">
+                Compose New Mail
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="text-center">
+            <div style="color: #0099CC; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh;">
+                <h1 class="display-4 font-weight-bold">Welcome to Mail System</h1>
+                <p class="lead text-white">Developed by IHAC</p>
+                <div class="mt-4">
+                    <!-- Login Button -->
+                    <a href="/Identity/Account/Login" class="btn btn-outline-custom btn-lg mx-2">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    <!-- Register Button -->
+                    <a href="/Identity/Account/Register" class="btn btn-custom btn-lg mx-2">
+                        <i class="fas fa-user-plus"></i> Register
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
 
 @section Scripts {
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get messages from TempData
+            const successMessage = '@TempData["SuccessMessage"]';
+            const errorMessage = '@TempData["ErrorMessage"]';
+
+            // If there's a success message, show alert
+            if (successMessage) {
+                showAlert('success', successMessage);
+            }
+
+            // If there's an error message, show alert
+            if (errorMessage) {
+                showAlert('danger', errorMessage);
+            }
+        });
+
+        // Function to show alert message
+        function showAlert(type, message) {
+            const alertBox = document.createElement('div');
+            alertBox.classList.add('alert', `alert-${type}`, 'alert-dismissible', 'fade', 'show');
+            alertBox.setAttribute('role', 'alert');
+            alertBox.innerHTML = `${message}<button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+        </button>`;
+            document.body.prepend(alertBox);
+        }
+
+        // Confirm delete action
         function confirmDelete() {
-            // Show the confirmation dialog
             return confirm("Are you sure you want to delete this email?");
         }
     </script>
 }
+
+<style>
+    .btn-compose-email {
+        background-color: #0099CC;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        position: fixed;
+        bottom: 20px; /* ระยะห่างจากด้านล่าง */
+        left: 50%; /* ตำแหน่งจากด้านซ้าย */
+        transform: translateX(-50%); /* เพื่อให้ปุ่มอยู่กลาง */
+        z-index: 1050; /* ให้อยู่ด้านบนสุด */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* เงาให้ดูเด่นขึ้น */
+    }
+
+        .btn-compose-email:hover {
+            background-color: #007ba7;
+            color: white;
+        }
+
+    /* Styling for read and unread emails */
+    .read {
+        background-color: #DCDCDC;
+        color: black;
+    }
+
+    .unread {
+        background-color: white;
+        color: black;
+    }
+
+    /* Make text in table cells black */
+    .table td {
+        color: black;
+    }
+
+    /* Optional: Make the cursor a pointer when hovering over a table row */
+    .table tr {
+        cursor: pointer;
+    }
+    /* ปรับสีแถบแจ้งเตือน (alert) สำหรับความสำเร็จ */
+    .alert-success {
+        background-color: #155724; /* เขียวเข้ม */
+        color: #fff; /* ข้อความสีขาว */
+    }
+
+    /* ปรับสีแถบแจ้งเตือน (alert) สำหรับความผิดพลาด */
+    .alert-danger {
+        background-color: #721c24; /* แดงเข้ม */
+        color: #fff; /* ข้อความสีขาว */
+    }
+
+    /* ปรับสีแถบแจ้งเตือน (alert) สำหรับการแจ้งเตือนทั่วไป */
+    .alert-info {
+        background-color: #0c5460; /* ฟ้าหม่นเข้ม */
+        color: #fff; /* ข้อความสีขาว */
+    }
+
+    /* ปรับสีแถบแจ้งเตือน (alert) สำหรับคำเตือน */
+    .alert-warning {
+        background-color: #856404; /* เหลืองเข้ม */
+        color: #fff; /* ข้อความสีขาว */
+    }
+
+    .alert {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1050; /* ให้สูงกว่าผลของคอนเทนต์ */
+        width: auto;
+        max-width: 80%;
+    }
+</style>
+
+<style>
+    /* Customize Login Button (btn-outline-custom) */
+    .btn-outline-custom {
+        background-color: #0099CC; /* ฟ้าสด */
+        color: white;
+        border-color: #007bff;
+    }
+
+        .btn-outline-custom:hover {
+            background-color: #0056b3; /* ฟ้าเข้มเมื่อ Hover */
+            border-color: #0056b3;
+        }
+
+    /* Customize Register Button (btn-custom) */
+    .btn-custom {
+        background-color: #0099CC; /* เขียว */
+        color: white;
+        border-color: #28a745;
+    }
+
+        .btn-custom:hover {
+            background-color: #218838; /* เขียวเข้มเมื่อ Hover */
+            border-color: #218838;
+        }
+</style>

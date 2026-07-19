@@ -1,111 +1,117 @@
 ﻿using FinalProject.Areas.Identity.Data;
+using FinalProject.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Data.SqlClient;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Configuration;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace FinalProject.Pages
 {
     public class IndexModel : PageModel
     {
-        // Changed from listEmails to ListEmails for consistency with the property
         public List<EmailInfo> ListEmails { get; set; } = new List<EmailInfo>();
 
         private readonly ILogger<IndexModel> _logger;
-        private readonly IConfiguration _configuration;
+        private readonly FinalProjectContext _dbContext;
 
-        public IndexModel(ILogger<IndexModel> logger, IConfiguration configuration)
+        public IndexModel(ILogger<IndexModel> logger, FinalProjectContext dbContext)
         {
             _logger = logger;
-            _configuration = configuration;
+            _dbContext = dbContext;
         }
 
-        // Changed the return type from void to Task to properly handle async operations
-        public async Task OnGet()
+        // Load Emails (GET)
+        public async Task OnGetAsync()
         {
+            if (string.IsNullOrWhiteSpace(User.Identity?.Name))
+            {
+                return;
+            }
+
+            string username = User.Identity.Name;
+
             try
             {
-                string connectionString = _configuration.GetConnectionString("DefaultConnection");
-
-                using (SqlConnection connection = new SqlConnection(connectionString))
-                {
-                    await connection.OpenAsync(); // Ensured the connection opens asynchronously
-
-                    string username = User.Identity?.Name ?? ""; // Simplified username assignment
-
-                    // SQL query using parameterized query to prevent SQL injection
-                    string sql = "SELECT * FROM Emails WHERE emailreceiver = @EmailReceiver";
-
-                    using (SqlCommand command = new SqlCommand(sql, connection))
+                ListEmails = await _dbContext.Emails
+                    .Where(e => e.EmailReceiver == username)
+                    .OrderByDescending(e => e.DateSent)
+                    .Select(e => new EmailInfo
                     {
-                        command.Parameters.AddWithValue("@EmailReceiver", username); // Safe parameter binding
-
-                        using (SqlDataReader reader = await command.ExecuteReaderAsync())
-                        {
-                            // Clear the list before adding items
-                            ListEmails.Clear();
-
-                            while (await reader.ReadAsync())
-                            {
-                                // Read each row and map it to the EmailInfo model
-                                EmailInfo emailInfo = new EmailInfo
-                                {
-                                    EmailID = reader.GetInt32(0).ToString(),
-                                    EmailSubject = reader.GetString(2),
-                                    EmailMessage = reader.GetString(3),
-                                    EmailDate = reader.GetDateTime(4).ToString("yyyy-MM-dd HH:mm:ss"),
-                                    EmailIsRead = reader.GetInt32(6).ToString(),
-                                    EmailSender = reader.GetString(5),
-                                    EmailReceiver = reader.GetString(1)
-                                };
-
-                                ListEmails.Add(emailInfo); // Add to the ListEmails
-                            }
-                        }
-                    }
-                }
+                        EmailID = e.Id.ToString(),
+                        EmailSubject = e.Subject,
+                        EmailMessage = e.Body,
+                        EmailDate = e.DateSent.ToString("yyyy-MM-dd HH:mm:ss"),
+                        EmailIsRead = e.ReadStatus ? "1" : "0",
+                        EmailSender = e.EmailSender,
+                        EmailReceiver = e.EmailReceiver
+                    })
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
-                // Log the error to the logger, so you can see it in the console or logs
-                _logger.LogError($"Error loading emails: {ex.Message}");
+                _logger.LogError(ex, "Database error while fetching emails for user {Username}.", username);
+                TempData["ErrorMessage"] = "There was an issue retrieving your emails. Please try again later.";
             }
         }
-        public async Task<IActionResult> OnPostDeleteEmail(int emailid)
+
+        // Delete Email (POST)
+        public async Task<IActionResult> OnPostDeleteEmailAsync(int emailid)
         {
+            if (emailid <= 0)
+            {
+                _logger.LogWarning("Invalid email ID: {EmailID} provided for deletion.", emailid);
+                TempData["ErrorMessage"] = "Invalid email selected for deletion.";
+                return RedirectToPage();
+            }
+
             try
             {
-                String connectionString = _configuration.GetConnectionString("DefaultConnection");
-                using (SqlConnection connection = new SqlConnection(connectionString))
+                var email = await _dbContext.Emails.FindAsync(emailid);
+                if (email == null)
                 {
-                    await connection.OpenAsync();
-
-                    // SQL to delete the email by ID
-                    string sql = "DELETE FROM Emails WHERE Id = @EmailID";
-
-                    using (SqlCommand command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@EmailID", emailid);
-                        await command.ExecuteNonQueryAsync();
-                    }
+                    _logger.LogWarning("No email found with ID {EmailID} for deletion.", emailid);
+                    TempData["ErrorMessage"] = "Email not found or already deleted.";
+                    return RedirectToPage();
                 }
-                return RedirectToPage();  // Redirect to the inbox after deletion
+
+                _dbContext.Emails.Remove(email);
+                await _dbContext.SaveChangesAsync();
+
+                _logger.LogInformation("Email with ID {EmailID} deleted successfully.", emailid);
+                TempData["SuccessMessage"] = "Email deleted successfully.";
             }
             catch (Exception ex)
             {
-                // Handle any errors
-                Console.WriteLine(ex.ToString());
-                return RedirectToPage();  // Optionally, you can show an error message here
+                _logger.LogError(ex, "Database error occurred while deleting email with ID {EmailID}.", emailid);
+                TempData["ErrorMessage"] = "There was an issue deleting the email. Please try again later.";
             }
+
+            return RedirectToPage();
         }
 
+        private async Task MarkEmailAsRead(int emailid)
+        {
+            try
+            {
+                var email = await _dbContext.Emails.FindAsync(emailid);
+                if (email == null)
+                {
+                    return;
+                }
+
+                email.ReadStatus = true;
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating read status for email ID {EmailID}.", emailid);
+            }
+        }
     }
 
-    // EmailInfo class with properties (encapsulation)
     public class EmailInfo
     {
         public string EmailID { get; set; }
@@ -117,3 +123,4 @@ namespace FinalProject.Pages
         public string EmailReceiver { get; set; }
     }
 }
+

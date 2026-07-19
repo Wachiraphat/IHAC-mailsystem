@@ -5,46 +5,91 @@
     ViewData["Title"] = "Compose Email";
 }
 
-<h3>@ViewData["Title"]</h3>
+<!-- Main Container for Centered Layout -->
+<div class="container mt-5">
 
-<form id="compose-email" method="post">
-    <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-    <table>
-        <tr>
-            <td>To</td>
-            <td>
-                <div class="form-floating">
-                    <input asp-for="To" class="form" aria-required="true" />
+    <!-- Page Title -->
+    <h2 class="text-center" style="color: #0099CC;">@ViewData["Title"]</h2>
+
+    <!-- Form Container: Centering the Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <form method="post" id="emailForm">
+                <!-- 'To' Input Field (reduced size) -->
+                <div class="form-group mb-3">
+                    <label for="To" class="form-label">To</label>
+                    <input type="email" class="form-control form-control-sm" id="To" name="To" value="@Model.To" required />
                     <span asp-validation-for="To" class="text-danger"></span>
                 </div>
-            </td>
-        </tr>
-        <tr>
-            <td>Subject</td>
-            <td>
-                <div class="form-floating">
-                    <input asp-for="Subject" class="form" aria-required="true" />
+
+                <!-- 'Subject' Input Field (reduced size) -->
+                <div class="form-group mb-3">
+                    <label for="Subject" class="form-label">Subject</label>
+                    <input type="text" class="form-control form-control-sm" id="Subject" name="Subject" value="@Model.Subject" required />
                     <span asp-validation-for="Subject" class="text-danger"></span>
                 </div>
-            </td>
-        </tr>
-        <tr>
-            <td>Body</td>
-            <td>
-                <div class="form-floating">
-                    <textarea asp-for="Body" class="form" aria-required="true"></textarea>
+
+                <!-- 'Body' Textarea Field -->
+                <div class="form-group mb-4">
+                    <label for="Body" class="form-label">Body</label>
+                    <textarea class="form-control form-control-lg" id="Body" name="Body" rows="6" required>@Model.Body</textarea>
                     <span asp-validation-for="Body" class="text-danger"></span>
                 </div>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                <button id="send-email" type="submit" class="btn btn-primary">Send</button>
-            </td>
-        </tr>
-    </table>
-</form>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+                <!-- Buttons Container (Go Back & Send Email) -->
+                <div class="d-flex justify-content-between">
+                    <!-- 'Go Back' Button (Updated to outline style) -->
+                    <button type="button" class="btn btn-outline-primary btn-lg" onclick="window.history.back();">Go Back</button>
+
+                    <!-- 'Send Email' Button (Updated color) -->
+                    <button type="submit" class="btn" style="background-color: #0099CC; color: white; font-size: 1.1rem; padding: 0.75rem; border-radius: 8px;">Send Email</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styling for Professional Look -->
+<style>
+    .container {
+        max-width: 800px;
+    }
+
+    h2 {
+        font-weight: bold;
+        color: #0099CC;
+    }
+
+    .form-group {
+        margin-bottom: 1.2rem;
+    }
+
+    .form-label {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .form-control {
+        font-size: 1rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-control-sm {
+        font-size: 0.9rem;
+    }
+
+    .form-control-lg {
+        font-size: 1.2rem;
+    }
+
+    .alert {
+        font-size: 1rem;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+</style>
+
+

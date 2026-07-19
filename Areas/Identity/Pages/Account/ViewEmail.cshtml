@@ -4,15 +4,49 @@
     ViewData["Title"] = "View Email";
 }
 
-<div class="email-view">
-    <h2>@Model.EmailSubject</h2>
-    <p><strong>From:</strong> @Model.EmailSender</p>
-    <p><strong>Date:</strong> @Model.EmailDate</p>
+<div class="container text-center">
+    <div class="email-view border p-4 rounded shadow-lg mx-auto my-4" style="max-width: 600px; background-color: #fff; color: black;">
+        <!-- Updated Heading Color with Word Wrapping -->
+        <h2 class="email-subject" style="color: #0099CC; word-wrap: break-word; white-space: pre-wrap;">@Model.EmailSubject</h2>
 
-    <div class="email-message">
-        <p><strong>Message:</strong></p>
-        <pre>@Model.EmailMessage</pre>
+        <p class="text-start"><strong>From:</strong> @Model.EmailSender</p>
+        <p class="text-start"><strong>Date:</strong> @Model.EmailDate</p>
+        <p class="text-start"><strong>Message:</strong></p>
+
+        <textarea class="email-message p-3 border rounded" style="width: 100%; height: 200px; background-color: #f7f7f7; color: black; border: 1px solid #ccc; resize: none; font-family: Arial, sans-serif; font-size: 14px; padding: 5px; white-space: pre-wrap;" readonly>
+            @Model.EmailMessage
+        </textarea>
+
+        <!-- Centered Back to Inbox Button with Custom Color -->
+        <div class="d-flex justify-content-center mt-3">
+            <a class="btn btn-custom btn-sm" href="/Index">Back to Inbox</a>
+        </div>
     </div>
-
-    <a class="btn btn-primary btn-sm" href="/Index">Back to Inbox</a>
 </div>
+
+<!-- Include Bootstrap JS and jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+    /* Custom styling for the Back to Inbox button */
+    .btn-custom {
+        background-color: #0099CC; /* Blue background */
+        color: white; /* White text */
+        border: none; /* Remove border */
+        padding: 10px 20px; /* Add padding for better spacing */
+        border-radius: 5px; /* Rounded corners */
+    }
+
+        .btn-custom:hover {
+            background-color: #007ba7; /* Darker blue on hover */
+            color: white; /* Keep text white */
+        }
+
+    /* Apply word wrapping for the email subject */
+    .email-subject {
+        word-wrap: break-word; /* Break long words into next line */
+        max-width: 100%; /* Ensure it uses the full width of the container */
+        white-space: normal; /* Allow the text to wrap naturally */
+    }
+</style>

@@ -9,13 +9,21 @@
     @{
         if (User.Identity?.IsAuthenticated ?? false)
         {
-            <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/", new { area = "" })" method="post">
+            <!-- Logout Button with Confirmation -->
+            <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" method="post" onsubmit="return confirmLogout();">
                 <button type="submit" class="nav-link btn btn-link text-dark">Click here to Logout</button>
             </form>
         }
         else
         {
-            <p>You have successfully logged out of the application.</p>
+            <p>You have successfully logged out of the application. <a href="@Url.Page("/Account/Login", new { area = "Identity" })">Go to Login</a></p>
         }
     }
 </header>
+
+<!-- JavaScript for Logout Confirmation -->
+<script>
+    function confirmLogout() {
+        return confirm("Are you sure you want to log out?");
+    }
+</script>
