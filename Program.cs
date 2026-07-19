@@ -1,5 +1,6 @@
 using FinalProject.Areas.Identity.Data;
 using FinalProject.Data;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Configuration;
@@ -19,6 +20,9 @@ builder.Services.AddDbContext<FinalProjectContext>(options =>
         options.UseSqlServer(connectionString);
     }
 });
+builder.Services.AddDataProtection()
+    .SetApplicationName("IHAC-MailSystem")
+    .PersistKeysToDbContext<FinalProjectContext>();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddControllersWithViews();
 

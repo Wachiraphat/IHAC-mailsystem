@@ -1,13 +1,14 @@
 ﻿using FinalProject.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using FinalProject.Models; // Add this to include the Email entity
 
 namespace FinalProject.Data
 {
-    public class FinalProjectContext : IdentityDbContext<FinalProjectUser>
+    public class FinalProjectContext : IdentityDbContext<FinalProjectUser>, IDataProtectionKeyContext
     {
         public FinalProjectContext(DbContextOptions<FinalProjectContext> options)
             : base(options)
@@ -16,6 +17,9 @@ namespace FinalProject.Data
 
         // DbSet for Email to represent the emails table in the database
         public DbSet<Email> Emails { get; set; }
+
+        // Shared by all Vercel instances so antiforgery and auth cookies can be decrypted.
+        public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
